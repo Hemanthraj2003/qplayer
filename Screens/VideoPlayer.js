@@ -13,13 +13,14 @@ import {
   Alert,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import Video from 'react-native-video';
+import Video, {Orientation} from 'react-native-video';
 import Icons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {saveHistory} from './Functions/History';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VideoPlayer = ({navigation}) => {
+  const [rotationFlag, setRotationFlag] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -134,6 +135,29 @@ const VideoPlayer = ({navigation}) => {
       setControlsVisible(false);
     } else {
       setControlsVisible(true);
+    }
+  };
+
+  const setRotationToggle = () => {
+    if (!rotationFlag) {
+      setRotationFlag(true);
+      setIsFullScreen(true);
+      navigation.setOptions({
+        orientation: 'landscape_right',
+      });
+
+      setTimeout(() => {
+        // Set to 'all' after the delay
+        navigation.setOptions({
+          orientation: 'all',
+        });
+      }, 10000);
+    } else {
+      setIsFullScreen(false);
+      setRotationFlag(false);
+      navigation.setOptions({
+        orientation: '',
+      });
     }
   };
 
@@ -271,6 +295,12 @@ const VideoPlayer = ({navigation}) => {
                   onPress={() => setSubtitleModalVisible(true)}>
                   <Icons name="closed-caption" size={25} color="#fff" />
                   <Text style={styles.buttonText}>Subtitle</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => setRotationToggle()}>
+                  <Icons name="screen-rotation" size={25} color="#fff" />
+                  <Text style={styles.buttonText}>Rotation</Text>
                 </TouchableOpacity>
               </View>
               {/* DOWNLOAD BUTTON */}

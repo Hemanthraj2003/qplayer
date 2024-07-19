@@ -25,11 +25,7 @@ const App = () => {
         <Stack.Screen name="Local" component={Local} />
         <Stack.Screen name="DownloadManager" component={DownloadManager} />
         <Stack.Screen name="Downloads" component={Downloads} />
-        <Stack.Screen
-          name="VideoPlayer"
-          component={VideoPlayer}
-          options={{orientation: 'all'}}
-        />
+        <Stack.Screen name="VideoPlayer" component={VideoPlayer} />
       </Stack.Navigator>
     </NavigationContainer>
   );
