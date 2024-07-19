@@ -66,11 +66,18 @@ const VideoPlayer = ({navigation}) => {
     setAudioTracks(data.audioTracks || []);
     setSubtitleTracks(data.textTracks || []);
   };
-
+  const extractTitle = filePath => {
+    // Split the path by '/' and get the last part
+    const parts = filePath.split('/');
+    return parts.pop(); // Returns the last element
+  };
   useEffect(() => {
     const fetchData = async () => {
       if (route.params.videoName) {
         setVideoUri('file://' + route.params.videoName);
+        const videoName = route.params.videoName;
+        const videoTitle = extractTitle(videoName);
+        setVideoTitle(videoTitle);
       } else if (route.params.videoUrl) {
         try {
           const {url, title} = await handleFetch(route.params.videoUrl);
