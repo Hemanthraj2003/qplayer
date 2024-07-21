@@ -49,7 +49,7 @@ const DownloadManager = ({navigation}) => {
         <Text style={styles.headerColor}>DOWNLOAD MANAGER</Text>
       </View>
       <View>
-        {downloadDetailsList.length !== 0 ? (
+        {downloadDetailsList && downloadDetailsList.length !== 0 ? (
           <FlatList
             data={downloadDetailsList}
             renderItem={renderItem}

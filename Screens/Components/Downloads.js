@@ -25,7 +25,6 @@ const Downloads = ({
   Size,
   setIsUpdated,
 }) => {
-  console.log(DownloadStatu);
   const url = source;
   const filePath = DownloadStatu
     ? FilePath
@@ -39,15 +38,16 @@ const Downloads = ({
   const [downloading, setDownloading] = useState(false);
   const [responsePath, setResponsePath] = useState('');
 
+  //both the useEffect is to overcome race condition
   useEffect(() => {
     console.log(responsePath);
   }, [responsePath]);
-
   useEffect(() => {
     if (downloaded != 0)
       console.log('a:' + formatBytes(downloaded) + '/' + formatBytes(fileSize));
   }, [downloaded]);
 
+  //updates the download details in the AsyncStorage if the download was success.
   const downloadSuccess = async (FileSize, resPath) => {
     setDownloadFinished(true);
 
@@ -67,6 +67,8 @@ const Downloads = ({
       JSON.stringify(downloadDetailsArray),
     );
   };
+
+  //this function is called before starting the download, the user has the otion to start the download or cancel that just delete fron the asyncStorage
   const cancel = async () => {
     const jsonData = await AsyncStorage.getItem('downloadDetails');
     const data = JSON.parse(jsonData);
@@ -75,6 +77,8 @@ const Downloads = ({
     setIsUpdated(true);
     await AsyncStorage.setItem('downloadDetails', JSON.stringify(filteredData));
   };
+
+  //this is a delete file handler, that ask for conformation and later call the unlink function asynchronously
   const deleteFile = async () => {
     Alert.alert(
       'Do you want to Delete?',
@@ -94,6 +98,7 @@ const Downloads = ({
     );
   };
 
+  //this function aslo deltes the files, and calls the unlink function
   const cancelDownloading = async () => {
     Alert.alert(
       'Do you want to Delete?',
@@ -112,6 +117,8 @@ const Downloads = ({
       {cancelable: false},
     );
   };
+
+  //deletes the file and displays the alert message to confirm that the item is deleted succesfully.
   const unLink = async () => {
     Alert.alert('Delete', 'The file was successfully Deleted.', [{text: 'OK'}]);
     try {
@@ -131,7 +138,10 @@ const Downloads = ({
     }
     await RNFetchBlob.fs.unlink(filePath);
   };
+
+  //this is the actuall function that deals with the download operation
   const downloadFile = async () => {
+    // code to check any half loaded or previosly dwonloaded files
     const fileExists = await RNFetchBlob.fs.exists(filePath);
     if (fileExists) {
       try {
@@ -168,6 +178,8 @@ const Downloads = ({
         console.log(error);
       });
   };
+
+  //set the data (AsyncStorage) and then call the downloadFile function
   const download = async () => {
     setDownloading(true);
     const downloadingString = await AsyncStorage.getItem('downloadDetails');
@@ -181,6 +193,8 @@ const Downloads = ({
     );
     await downloadFile();
   };
+
+  //handles the userInteraction to start the deonload and call download function based on the user input
   const handleDownloadPress = () => {
     Alert.alert(
       'Do you want to download?',
