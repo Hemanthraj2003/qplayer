@@ -2,11 +2,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useContext, useEffect, useState} from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
 import Downloads from './Components/Downloads';
-
+import {addDownloadDetails, generateNewId} from './Functions/downloadFunctions';
 const DownloadManager = ({navigation}) => {
   const [downloadDetailsList, setDownloadDetailsList] = useState([]);
   const [isUpdated, setIsUpdated] = useState(false);
   useEffect(() => {
+    const item = {
+      id: 1,
+      title: 'new.mp4',
+      url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      downloadedFilePath: null,
+      resumeData: null,
+      size: null,
+      status: null,
+    };
+    const fun = async () => {
+      await addDownloadDetails(item);
+    };
+    // fun();f
     const reset = async () => {
       const test = await AsyncStorage.getItem('downloadDetails');
       setDownloadDetailsList(JSON.parse(test));
@@ -15,31 +28,13 @@ const DownloadManager = ({navigation}) => {
     reset();
   }, []);
 
-  useEffect(() => {
-    const update = async () => {
-      const test = await AsyncStorage.getItem('downloadDetails');
-      setDownloadDetailsList(JSON.parse(test));
-      setIsUpdated(false);
-    };
-    if (isUpdated) {
-      update();
-    }
-  }, [isUpdated]);
-
   const renderItem = ({item}) => {
-    const status = item.DownloadStatus;
     return (
-      <View>
-        <Downloads
-          navigation={navigation}
-          title={item.Title}
-          source={item.Source}
-          DownloadStatu={status}
-          FilePath={item.ResponseFilePath}
-          Size={item.Size}
-          setIsUpdated={setIsUpdated}
-        />
-      </View>
+      <Downloads
+        navigation={navigation}
+        item={item}
+        setIsUpdated={setIsUpdated}
+      />
     );
   };
 
@@ -53,7 +48,7 @@ const DownloadManager = ({navigation}) => {
           <FlatList
             data={downloadDetailsList}
             renderItem={renderItem}
-            keyExtractor={item => item.Source}
+            keyExtractor={item => item.id}
             contentContainerStyle={styles.flatList}
             extraData={downloadDetailsList}
           />

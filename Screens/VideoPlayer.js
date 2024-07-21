@@ -192,7 +192,7 @@ const VideoPlayer = ({navigation}) => {
         'downloadDetails',
         JSON.stringify(updatedArray),
       );
-      navigation.navigate('DownloadManager');
+      navigation.navigate('Home');
     };
     Alert.alert(
       'Do you want to download?',

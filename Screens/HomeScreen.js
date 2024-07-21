@@ -4,6 +4,7 @@ import Online from './Components/Online';
 import Header from './Components/Header';
 import MidSec from './Components/MidSec';
 import ButSec from './Components/ButSec';
+import DownloadManager from './DownloadManager';
 
 const HomeScreen = ({navigation}) => {
   const [isOnlineVisible, setIsOnlineVisible] = useState(false);
@@ -25,7 +26,7 @@ const HomeScreen = ({navigation}) => {
         navigation={navigation}
         toggleOnlineVisibility={toggleOnlineVisibility}
       />
-      <MidSec navigation={navigation} />
+      <DownloadManager navigation={navigation} />
     </View>
   );
 };
