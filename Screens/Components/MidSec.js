@@ -75,7 +75,7 @@ const MidSec = ({navigation}) => {
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
-    marginTop: '2%',
+    backgroundColor: 'black',
   },
 
   head: {

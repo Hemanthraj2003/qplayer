@@ -31,18 +31,3 @@ export const addDownloadDetails = async data => {
 };
 
 //update the current downloading list
-export const updateDownloadList = async (id, downloaded, fileSize) => {
-  console.log(downloaded + '/' + fileSize);
-  const data = await AsyncStorage.getItem('downloadDetails');
-  const dataParsed = JSON.parse(data) || [];
-
-  // Update the specific item in the list
-  const updatedList = dataParsed.map(item =>
-    item.id === id ? {...item, resumeData: downloaded, size: fileSize} : item,
-  );
-
-  // Save the updated list back to AsyncStorage
-  await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
-
-  return downloaded;
-};

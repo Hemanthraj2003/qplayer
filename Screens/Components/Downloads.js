@@ -1,14 +1,96 @@
-import {View, Text, TouchableOpacity, Button} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Button,
+  StyleSheet,
+  ProgressBarAndroid,
+} from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import * as FileSystem from 'expo-file-system';
 import {formatBytes} from '../Functions/downloadFunctions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icons from 'react-native-vector-icons/MaterialIcons';
 
-const Downloads = ({navigation, item}) => {
-  const [downloadProgress, setDownloadProgress] = useState(0);
+const Downloads = ({navigation, item, setDownloadDetailsList}) => {
+  const [downloadProgress, setDownloadProgress] = useState(item.downloadedSize);
   const [download, setDownload] = useState();
+  const [downloadStart, setDownloadStart] = useState(null);
+  const [retry, setRetry] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadFinished, setDownloadFinished] = useState(false);
+  const [fileSize, setFileSize] = useState(item.totalSize);
+  const [fileUri, setFileUri] = useState(item.downloadedFilePath);
+  const deleteItemById = async () => {
+    if (!paused && isDownloading) {
+      const downloadSnapshot = await download.pauseAsync();
+      console.log('Download paused:', downloadSnapshot);
+    }
+    try {
+      const storedList = await AsyncStorage.getItem('downloadDetails');
+      const parsedList = storedList ? JSON.parse(storedList) : [];
+      console.log('h');
+      const updatedList = parsedList.filter(
+        listItem => listItem.id !== item.id,
+      );
 
+      await AsyncStorage.setItem(
+        'downloadDetails',
+        JSON.stringify(updatedList),
+      );
+      setDownloadDetailsList(updatedList);
+
+      console.log('Item deleted successfully');
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+  const unlinkFile = async () => {
+    try {
+      await FileSystem.deleteAsync(FileSystem.documentDirectory + item.title, {
+        idempotent: true,
+      });
+      console.log('File deleted successfully');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+  const updateDownloadList = async (id, uri) => {
+    const data = await AsyncStorage.getItem('downloadDetails');
+    const dataParsed = JSON.parse(data) || [];
+
+    // Update the specific item in the list
+    const updatedList = dataParsed.map(items =>
+      items.id === id
+        ? {
+            ...items,
+            status: 'finished',
+            downloadedFilePath: uri,
+            totalSize: fileSize,
+          }
+        : items,
+    );
+
+    // Save the updated list back to AsyncStorage
+    await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
+  };
+  const initialize = () => {
+    if (item.status === 'finished') {
+      setDownloadFinished(true);
+    }
+    if (item.status == null && item.flag == 0) {
+      setDownloadStart(true);
+    }
+    if (item.status === 'paused' && item.flag == 1) {
+      setIsDownloading(true);
+      setPaused(true);
+    }
+    if (item.status === 'downloading' && item.flag == 0) {
+      setRetry(true);
+      setDownloadStart(true);
+    }
+  };
   useEffect(() => {
     const getDownloadable = () => {
       if (item.resumeData !== null) {
@@ -20,6 +102,7 @@ const Downloads = ({navigation, item}) => {
           progress => {
             console.log(formatBytes(progress.totalBytesWritten));
             setDownloadProgress(progress.totalBytesWritten);
+            setFileSize(progress.totalBytesExpectedToWrite);
           },
           data.resumeData,
         );
@@ -32,6 +115,7 @@ const Downloads = ({navigation, item}) => {
           progress => {
             console.log(formatBytes(progress.totalBytesWritten));
             setDownloadProgress(progress.totalBytesWritten);
+            setFileSize(progress.totalBytesExpectedToWrite);
           },
         );
         setDownload(downloadResumable);
@@ -39,22 +123,48 @@ const Downloads = ({navigation, item}) => {
     };
 
     getDownloadable();
+    initialize();
   }, []);
 
   const downloadFile = async () => {
     setIsDownloading(true);
+    setDownloadStart(false);
+    const data = await AsyncStorage.getItem('downloadDetails');
+    const dataParsed = JSON.parse(data) || [];
+    const updatedList = dataParsed.map(items =>
+      items.id === item.id ? {...items, status: 'downloading'} : items,
+    );
+
+    // Save the updated list back to AsyncStorage
+    await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
     const {uri} = await download.downloadAsync();
-    console.log(uri);
-    navigation.navigate('VideoPlayer', {videoName: uri});
+    if (uri) {
+      setIsDownloading(false);
+      setPaused(false);
+      setIsDownloading(false);
+      setDownloadFinished(true);
+      updateDownloadList(item.id, uri);
+    }
+    setFileUri(uri);
   };
   const pauseDownloading = async () => {
     await download.pauseAsync();
+    setPaused(true);
     try {
       const data = await AsyncStorage.getItem('downloadDetails');
       const dataParsed = JSON.parse(data) || [];
       // Update the specific item in the list
       const updatedList = dataParsed.map(res =>
-        res.id === item.id ? {...item, resumeData: download.savable()} : item,
+        res.id === item.id
+          ? {
+              ...res,
+              resumeData: download.savable(),
+              flag: 1,
+              status: 'paused',
+              totalSize: fileSize,
+              downloadedSize: downloadProgress,
+            }
+          : res,
       );
 
       // Save the updated list back to AsyncStorage
@@ -68,18 +178,256 @@ const Downloads = ({navigation, item}) => {
     }
   };
   const resumeDownloading = async () => {
+    setPaused(false);
+    const data = await AsyncStorage.getItem('downloadDetails');
+    const dataParsed = JSON.parse(data) || [];
+    const updatedList = dataParsed.map(items =>
+      items.id === item.id ? {...items, flag: 0} : items,
+    );
+
+    // Save the updated list back to AsyncStorage
+    await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
     const {uri} = await download.resumeAsync();
-    console.log(uri);
-    navigation.navigate('VideoPlayer', {videoName: uri});
+    if (uri) {
+      setDownloadStart(false);
+      setPaused(false);
+      setIsDownloading(false);
+      setDownloadFinished(true);
+      updateDownloadList(item.id, uri);
+    }
+    setFileUri(uri);
   };
+  const cancel = () => {
+    deleteItemById();
+  };
+  const cancelDelete = () => {
+    deleteItemById();
+    unlinkFile();
+  };
+  const renderDownload = () => {
+    return (
+      <View style={styles.card}>
+        <View style={styles.startDownloadPlaybutton}>
+          <Icons name={'play-circle-outline'} size={50} color="#ffc903" />
+        </View>
+        <View style={styles.startDownloadDetails}>
+          <Text numberOfLines={1} ellipsizeMode="tail">
+            {item.title}
+          </Text>
+          <View style={styles.downloadAndCancel}>
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={downloadFile}>
+              <View>
+                <Text style={{color: 'black'}}>
+                  {retry ? 'Retry' : 'Download'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelDelete} onPress={cancel}>
+              <View>
+                <Text>Cancel</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderDownloading = () => {
+    return (
+      <View style={styles.downloadingCard}>
+        <View
+          style={{
+            height: 30,
+            marginTop: 10,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Text numberOfLines={1} ellipsizeMode="tail">
+            {item.title}
+          </Text>
+        </View>
+        <View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+            <Text
+              style={{
+                marginStart: 22,
+                fontSize: 12,
+                color: '#737272',
+              }}>
+              {formatBytes(downloadProgress)} / {formatBytes(fileSize)}
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                width: 120,
+                justifyContent: 'space-evenly',
+              }}>
+              {paused == true ? (
+                <TouchableOpacity onPress={resumeDownloading}>
+                  <Icons name={'play-arrow'} size={30} color="#957500" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={pauseDownloading}>
+                  <Icons name={'pause'} size={30} color="#957500" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={cancelDelete}>
+                <Icons name={'cancel'} size={30} color="#957500" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <ProgressBarAndroid
+            style={{marginHorizontal: 15}}
+            styleAttr="Horizontal"
+            indeterminate={false}
+            progress={downloadProgress / fileSize}
+            color="#957500" // Background color of the progress bar
+          />
+        </View>
+      </View>
+    );
+  };
+
+  const renderDownloaded = () => {
+    return (
+      <View style={styles.downloadedCard}>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate('VideoPlayer', {videoName: fileUri});
+          }}>
+          <View style={styles.downloadedPlayButton}>
+            <Icons name={'play-circle-outline'} size={30} color="#ffc903" />
+          </View>
+        </TouchableOpacity>
+        <View
+          style={{
+            flex: 1,
+            height: 60,
+            paddingHorizontal: 10,
+            justifyContent: 'space-evenly',
+          }}>
+          <View>
+            <Text numberOfLines={1} ellipsizeMode="tail">
+              {item.title}
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingEnd: 18,
+            }}>
+            <Text>{formatBytes(downloadProgress)}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 32,
+            width: 32,
+            marginEnd: 10,
+          }}
+          onPress={cancelDelete}>
+          <Icons name={'delete'} size={32} color="#957500" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View>
-      {isDownloading && <Text>{formatBytes(downloadProgress)}</Text>}
-      <Button title="Download" on onPress={downloadFile} />
-      <Button title="Paused" on onPress={pauseDownloading} />
-      <Button title="Resume" on onPress={resumeDownloading} />
+      {downloadStart == true && renderDownload()}
+      {isDownloading == true && renderDownloading()}
+      {downloadFinished == true && renderDownloaded()}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 100,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    backgroundColor: 'black',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  downloadingCard: {
+    height: 100,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    backgroundColor: 'black',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  downloadedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 80,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    backgroundColor: 'black',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  startDownloadPlaybutton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 80,
+    width: 80,
+    borderRadius: 10,
+
+    backgroundColor: '#242424',
+  },
+  downloadedPlayButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 60,
+    width: 60,
+    borderRadius: 10,
+
+    backgroundColor: '#242424',
+  },
+  startDownloadDetails: {
+    flex: 1,
+    height: 80,
+    paddingHorizontal: 10,
+  },
+  downloadAndCancel: {
+    paddingTop: 10,
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  downloadButton: {
+    backgroundColor: '#ffc903',
+    width: 90,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  cancelDelete: {
+    backgroundColor: '#3B3B3B',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    width: 90,
+    alignItems: 'center',
+  },
+});
 
 export default Downloads;

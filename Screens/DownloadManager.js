@@ -3,23 +3,29 @@ import React, {useContext, useEffect, useState} from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
 import Downloads from './Components/Downloads';
 import {addDownloadDetails, generateNewId} from './Functions/downloadFunctions';
-const DownloadManager = ({navigation}) => {
-  const [downloadDetailsList, setDownloadDetailsList] = useState([]);
+const DownloadManager = ({
+  navigation,
+  downloadDetailsList,
+  setDownloadDetailsList,
+}) => {
   const [isUpdated, setIsUpdated] = useState(false);
+
   useEffect(() => {
     const item = {
-      id: 1,
-      title: 'new.mp4',
+      id: 2,
+      title: 'new01.mp4',
       url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      downloadedFilePath: null,
-      resumeData: null,
-      size: null,
       status: null,
+      resumeData: null,
+      flag: 0,
+      downloadedSize: 0,
+      totalSize: 1,
+      downloadedFilePath: null,
     };
     const fun = async () => {
       await addDownloadDetails(item);
     };
-    // fun();f
+    // fun();
     const reset = async () => {
       const test = await AsyncStorage.getItem('downloadDetails');
       setDownloadDetailsList(JSON.parse(test));
@@ -33,7 +39,7 @@ const DownloadManager = ({navigation}) => {
       <Downloads
         navigation={navigation}
         item={item}
-        setIsUpdated={setIsUpdated}
+        setDownloadDetailsList={setDownloadDetailsList}
       />
     );
   };
@@ -59,6 +65,7 @@ const DownloadManager = ({navigation}) => {
             </Text>
           </View>
         )}
+        {/* <Downloads navigation={navigation} item={item} /> */}
       </View>
     </View>
   );
@@ -74,7 +81,7 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
     backgroundColor: 'black',
     paddingHorizontal: 28,
-    paddingVertical: 20,
+    paddingBottom: 18,
   },
   headerColor: {
     color: '#957500',

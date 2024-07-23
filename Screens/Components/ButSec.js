@@ -1,5 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Entypo';
+import Icons from 'react-native-vector-icons/MaterialIcons';
+
 import Icon2 from 'react-native-vector-icons/AntDesign';
 
 const ButSec = ({navigation, toggleOnlineVisibility}) => {
@@ -7,7 +9,7 @@ const ButSec = ({navigation, toggleOnlineVisibility}) => {
     navigation.navigate('Local');
   };
   const goDownloads = () => {
-    navigation.navigate('DownloadManager');
+    navigation.navigate('History');
   };
   return (
     <View style={styles.size}>
@@ -37,13 +39,13 @@ const ButSec = ({navigation, toggleOnlineVisibility}) => {
       </View>
       <View style={styles.buttons}>
         <TouchableOpacity style={{alignItems: 'center'}} onPress={goDownloads}>
-          <Icon
-            name="download"
+          <Icons
+            name="history"
             size={50}
             color="#ffc903"
             style={{marginBottom: 5}}
           />
-          <Text>Downloads</Text>
+          <Text>History</Text>
         </TouchableOpacity>
       </View>
 

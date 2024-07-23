@@ -1,13 +1,22 @@
 import {View, Text, StyleSheet} from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Online from './Components/Online';
 import Header from './Components/Header';
 import MidSec from './Components/MidSec';
 import ButSec from './Components/ButSec';
 import DownloadManager from './DownloadManager';
+import {useRoute} from '@react-navigation/native';
 
 const HomeScreen = ({navigation}) => {
   const [isOnlineVisible, setIsOnlineVisible] = useState(false);
+  const [downloadDetailsList, setDownloadDetailsList] = useState([]);
+
+  const route = useRoute();
+  console.log();
+  useEffect(() => {
+    if (route.params) setDownloadDetailsList(route.params.download);
+  }, [route.params]);
+
   const toggleOnlineVisibility = () => {
     setIsOnlineVisible(!isOnlineVisible);
   };
@@ -26,7 +35,11 @@ const HomeScreen = ({navigation}) => {
         navigation={navigation}
         toggleOnlineVisibility={toggleOnlineVisibility}
       />
-      <DownloadManager navigation={navigation} />
+      <DownloadManager
+        navigation={navigation}
+        downloadDetailsList={downloadDetailsList}
+        setDownloadDetailsList={setDownloadDetailsList}
+      />
     </View>
   );
 };

@@ -18,6 +18,7 @@ import Icons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {saveHistory} from './Functions/History';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {generateNewId} from './Functions/downloadFunctions';
 
 const VideoPlayer = ({navigation}) => {
   const [rotationFlag, setRotationFlag] = useState(false);
@@ -168,15 +169,20 @@ const VideoPlayer = ({navigation}) => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setPaused(true);
+    const newId = await generateNewId();
     const downloadDetail = [
       {
-        Title: videoTitle,
-        Source: videoUri,
-        DownloadStatus: false,
-        FilePath: '',
-        Size: 0,
+        id: newId,
+        title: videoTitle,
+        url: videoUri,
+        status: null,
+        resumeData: null,
+        flag: 0,
+        downloadedSize: 0,
+        totalSize: 1,
+        downloadedFilePath: null,
       },
     ];
     const updateDownloadDetails = async () => {
@@ -192,7 +198,7 @@ const VideoPlayer = ({navigation}) => {
         'downloadDetails',
         JSON.stringify(updatedArray),
       );
-      navigation.navigate('Home');
+      navigation.navigate('Home', {download: updatedArray});
     };
     Alert.alert(
       'Do you want to download?',
