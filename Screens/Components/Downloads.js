@@ -78,6 +78,7 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   const initialize = () => {
     if (item.status === 'finished') {
       setDownloadFinished(true);
+      setDownloadProgress(item.totalSize);
     }
     if (item.status == null && item.flag == 0) {
       setDownloadStart(true);
@@ -127,33 +128,41 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   }, []);
 
   const downloadFile = async () => {
-    setIsDownloading(true);
-    setDownloadStart(false);
-    const data = await AsyncStorage.getItem('downloadDetails');
-    const dataParsed = JSON.parse(data) || [];
-    const updatedList = dataParsed.map(items =>
-      items.id === item.id ? {...items, status: 'downloading'} : items,
-    );
-
-    // Save the updated list back to AsyncStorage
-    await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
-    const {uri} = await download.downloadAsync();
-    if (uri) {
-      setIsDownloading(false);
-      setPaused(false);
-      setIsDownloading(false);
-      setDownloadFinished(true);
-      updateDownloadList(item.id, uri);
-    }
-    setFileUri(uri);
-  };
-  const pauseDownloading = async () => {
-    await download.pauseAsync();
-    setPaused(true);
     try {
+      setIsDownloading(true);
+      setDownloadStart(false);
+
       const data = await AsyncStorage.getItem('downloadDetails');
       const dataParsed = JSON.parse(data) || [];
-      // Update the specific item in the list
+      const updatedList = dataParsed.map(items =>
+        items.id === item.id ? {...items, status: 'downloading'} : items,
+      );
+
+      await AsyncStorage.setItem(
+        'downloadDetails',
+        JSON.stringify(updatedList),
+      );
+
+      const {uri} = await download.downloadAsync();
+      if (uri) {
+        setIsDownloading(false);
+        setPaused(false);
+        setDownloadFinished(true);
+        updateDownloadList(item.id, uri);
+        setFileUri(uri);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+  const pauseDownloading = async () => {
+    try {
+      const downloadSavable = await download.pauseAsync();
+      console.log(downloadSavable);
+      console.log(download.savable());
+      setPaused(true);
+      const data = await AsyncStorage.getItem('downloadDetails');
+      const dataParsed = JSON.parse(data) || [];
       const updatedList = dataParsed.map(res =>
         res.id === item.id
           ? {
@@ -167,35 +176,42 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
           : res,
       );
 
-      // Save the updated list back to AsyncStorage
       await AsyncStorage.setItem(
         'downloadDetails',
         JSON.stringify(updatedList),
       );
-      console.log('paused ');
+      console.log('paused');
     } catch (error) {
-      console.log('pausing error' + error);
+      console.error('Pausing error:', error);
     }
   };
   const resumeDownloading = async () => {
-    setPaused(false);
-    const data = await AsyncStorage.getItem('downloadDetails');
-    const dataParsed = JSON.parse(data) || [];
-    const updatedList = dataParsed.map(items =>
-      items.id === item.id ? {...items, flag: 0} : items,
-    );
-
-    // Save the updated list back to AsyncStorage
-    await AsyncStorage.setItem('downloadDetails', JSON.stringify(updatedList));
-    const {uri} = await download.resumeAsync();
-    if (uri) {
-      setDownloadStart(false);
+    try {
       setPaused(false);
-      setIsDownloading(false);
-      setDownloadFinished(true);
-      updateDownloadList(item.id, uri);
+
+      const data = await AsyncStorage.getItem('downloadDetails');
+      const dataParsed = JSON.parse(data) || [];
+      const updatedList = dataParsed.map(items =>
+        items.id === item.id ? {...items, flag: 0} : items,
+      );
+
+      await AsyncStorage.setItem(
+        'downloadDetails',
+        JSON.stringify(updatedList),
+      );
+
+      const {uri} = await download.resumeAsync();
+      if (uri) {
+        setDownloadStart(false);
+        setPaused(false);
+        setIsDownloading(false);
+        setDownloadFinished(true);
+        updateDownloadList(item.id, uri);
+        setFileUri(uri);
+      }
+    } catch (error) {
+      console.error('Resuming error:', error);
     }
-    setFileUri(uri);
   };
   const cancel = () => {
     deleteItemById();
@@ -264,6 +280,26 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
               }}>
               {formatBytes(downloadProgress)} / {formatBytes(fileSize)}
             </Text>
+            {paused ? (
+              <Text
+                style={{
+                  marginStart: 22,
+                  fontSize: 12,
+                  color: '#737272',
+                }}>
+                Paused
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  marginStart: 22,
+                  fontSize: 12,
+                  color: '#737272',
+                }}>
+                Downlading
+              </Text>
+            )}
+
             <View
               style={{
                 flexDirection: 'row',
@@ -327,6 +363,14 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
               paddingEnd: 18,
             }}>
             <Text>{formatBytes(downloadProgress)}</Text>
+            <Text
+              style={{
+                marginStart: 22,
+                fontSize: 14,
+                color: '#737272',
+              }}>
+              Downoad Finished
+            </Text>
           </View>
         </View>
         <TouchableOpacity
