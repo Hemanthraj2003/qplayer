@@ -5,12 +5,14 @@ import {
   Button,
   StyleSheet,
   ProgressBarAndroid,
+  Alert,
 } from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import * as FileSystem from 'expo-file-system';
-import {formatBytes} from '../Functions/downloadFunctions';
+import {formatBytes, saveToGallary} from '../Functions/downloadFunctions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icons from 'react-native-vector-icons/MaterialIcons';
+import RNFS from 'react-native-fs';
 
 const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   const [downloadProgress, setDownloadProgress] = useState(item.downloadedSize);
@@ -22,6 +24,8 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   const [downloadFinished, setDownloadFinished] = useState(false);
   const [fileSize, setFileSize] = useState(item.totalSize);
   const [fileUri, setFileUri] = useState(item.downloadedFilePath);
+  const [isSaved, setIsSaved] = useState(false);
+
   const deleteItemById = async () => {
     if (!paused && isDownloading) {
       const downloadSnapshot = await download.pauseAsync();
@@ -122,7 +126,9 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
         setDownload(downloadResumable);
       }
     };
-
+    if (fileUri === `${RNFS.DownloadDirectoryPath}/${item.title}.mp4`) {
+      setIsSaved(true);
+    }
     getDownloadable();
     initialize();
   }, []);
@@ -219,6 +225,15 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   const cancelDelete = () => {
     deleteItemById();
     unlinkFile();
+  };
+
+  const handleSave = async () => {
+    const savedPath = await saveToGallary(item.title, fileUri);
+    await updateDownloadList(item.id, savedPath);
+    setFileUri(savedPath);
+    Alert.alert('success', savedPath + '.mp4');
+    setIsSaved(true);
+    console.log(savedPath);
   };
   const renderDownload = () => {
     return (
@@ -335,6 +350,7 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
   const renderDownloaded = () => {
     return (
       <View style={styles.downloadedCard}>
+        {/* PLAY BUTTON */}
         <TouchableOpacity
           onPress={() => {
             navigation.navigate('VideoPlayer', {videoName: fileUri});
@@ -348,13 +364,9 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
             flex: 1,
             height: 60,
             paddingHorizontal: 10,
+
             justifyContent: 'space-evenly',
           }}>
-          <View>
-            <Text numberOfLines={1} ellipsizeMode="tail">
-              {item.title}
-            </Text>
-          </View>
           <View
             style={{
               flexDirection: 'row',
@@ -362,17 +374,32 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
               alignItems: 'center',
               paddingEnd: 18,
             }}>
-            <Text>{formatBytes(downloadProgress)}</Text>
-            <Text
-              style={{
-                marginStart: 22,
-                fontSize: 14,
-                color: '#737272',
-              }}>
-              Downoad Finished
-            </Text>
+            <View style={{justifyContent: 'center'}}>
+              <Text numberOfLines={1} ellipsizeMode="tail">
+                {item.title}
+              </Text>
+              <Text>{formatBytes(downloadProgress)}</Text>
+            </View>
+            {isSaved === false && (
+              <TouchableOpacity onPress={handleSave}>
+                <View
+                  style={{
+                    fontSize: 14,
+                    padding: 10,
+                    paddingHorizontal: 13,
+                    borderRadius: 5,
+
+                    backgroundColor: '#bf9808',
+                  }}>
+                  <Text style={{color: '#212121', fontWeight: '700'}}>
+                    Save
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
+        {/* DELETE BUTTON */}
         <TouchableOpacity
           style={{
             alignItems: 'center',
@@ -382,7 +409,7 @@ const Downloads = ({navigation, item, setDownloadDetailsList}) => {
             marginEnd: 10,
           }}
           onPress={cancelDelete}>
-          <Icons name={'delete'} size={32} color="#957500" />
+          <Icons name={'delete'} size={32} color="#bf9808" />
         </TouchableOpacity>
       </View>
     );

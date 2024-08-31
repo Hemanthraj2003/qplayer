@@ -3,6 +3,7 @@ import Icon from 'react-native-vector-icons/Entypo';
 import Icons from 'react-native-vector-icons/MaterialIcons';
 
 import Icon2 from 'react-native-vector-icons/AntDesign';
+import {InterstitialAd, TestIds} from 'react-native-google-mobile-ads';
 
 const ButSec = ({navigation, toggleOnlineVisibility}) => {
   const goLocal = () => {

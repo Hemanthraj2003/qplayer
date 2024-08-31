@@ -2,8 +2,29 @@ import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
 import {loadHistory, deleteHistory} from '../Functions/History';
 import {useEffect, useState} from 'react';
 import Icons from 'react-native-vector-icons/MaterialIcons';
+import {
+  AdEventType,
+  InterstitialAd,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+const simplead = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
 
 const MidSec = ({navigation}) => {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) {
+      setLoaded(false);
+      simplead.show();
+    }
+  });
+  useEffect(() => {
+    simplead.addAdEventListener(AdEventType.LOADED, () => {
+      setLoaded(true);
+    });
+    simplead.load();
+  }, []);
+
   const [reload, setReload] = useState(true);
   const [historyData, setHistoryData] = useState([]);
   const history = async () => {

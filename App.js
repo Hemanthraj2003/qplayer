@@ -1,4 +1,9 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
+import mobileAds, {
+  AdEventType,
+  AppOpenAd,
+  TestIds,
+} from 'react-native-google-mobile-ads';
 import {Linking} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {
@@ -14,11 +19,27 @@ import * as MediaLibrary from 'expo-media-library';
 import MidSec from './Screens/Components/MidSec';
 
 const Stack = createNativeStackNavigator();
-
+const appOpenAd = AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
 const App = () => {
+  const [loaded, setLoaded] = useState(false);
   const navigationRef = useNavigationContainerRef();
 
   useEffect(() => {
+    if (loaded) {
+      appOpenAd.show();
+    }
+  }, [loaded]);
+  useEffect(() => {
+    appOpenAd.addAdEventListener(AdEventType.LOADED, () => {
+      setLoaded(true);
+    });
+
+    appOpenAd.load();
+    mobileAds()
+      .initialize()
+      .then(adapterStatuses => {
+        console.log('ads online', adapterStatuses);
+      });
     const requestPermissions = async () => {
       const {status} = await MediaLibrary.requestPermissionsAsync();
       console.log('Permission status:', status);

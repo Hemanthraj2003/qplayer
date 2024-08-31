@@ -19,8 +19,19 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {saveHistory} from './Functions/History';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {generateNewId} from './Functions/downloadFunctions';
+import {
+  AdEventType,
+  RewardedAd,
+  RewardedAdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+const rewardAd01 = RewardedAd.createForAdRequest(TestIds.REWARDED);
+const rewardAd02 = RewardedAd.createForAdRequest(TestIds.REWARDED);
 
 const VideoPlayer = ({navigation}) => {
+  const [load01, setLoad01] = useState(false);
+
   const [rotationFlag, setRotationFlag] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -73,6 +84,27 @@ const VideoPlayer = ({navigation}) => {
     return parts.pop(); // Returns the last element
   };
   useEffect(() => {
+    if (load01) {
+      setLoad01(false);
+      rewardAd01.show();
+    }
+  }, [load01]);
+  useEffect(() => {
+    rewardAd01.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      setLoad01(true);
+    });
+    rewardAd01.addAdEventListener(RewardedAdEventType.EARNED_REWARD, reward => {
+      console.log(reward);
+    });
+    rewardAd02.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      console.log(load01);
+    });
+    rewardAd02.addAdEventListener(RewardedAdEventType.EARNED_REWARD, reward => {
+      console.log(reward);
+    });
+    rewardAd01.load();
+    rewardAd02.load();
+
     const fetchData = async () => {
       if (route.params.videoName) {
         setVideoUri('file://' + route.params.videoName);
@@ -199,6 +231,7 @@ const VideoPlayer = ({navigation}) => {
         JSON.stringify(updatedArray),
       );
       navigation.navigate('Home', {download: updatedArray});
+      rewardAd02.show();
     };
     Alert.alert(
       'Do you want to download?',

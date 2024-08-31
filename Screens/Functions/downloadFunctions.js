@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFS from 'react-native-fs';
 
 // Custum function to format Bytes
 export const formatBytes = bytes => {
@@ -30,4 +31,9 @@ export const addDownloadDetails = async data => {
   await AsyncStorage.setItem('downloadDetails', newData);
 };
 
-//update the current downloading list
+//save to dowloads
+export const saveToGallary = async (name, path) => {
+  const targetPath = `${RNFS.DownloadDirectoryPath}/${name}.mp4`;
+  await RNFS.moveFile(path, targetPath);
+  return targetPath;
+};

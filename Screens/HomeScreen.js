@@ -2,10 +2,10 @@ import {View, Text, StyleSheet} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Online from './Components/Online';
 import Header from './Components/Header';
-import MidSec from './Components/MidSec';
 import ButSec from './Components/ButSec';
 import DownloadManager from './DownloadManager';
 import {useRoute} from '@react-navigation/native';
+import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
 
 const HomeScreen = ({navigation}) => {
   const [isOnlineVisible, setIsOnlineVisible] = useState(false);
@@ -30,6 +30,7 @@ const HomeScreen = ({navigation}) => {
           toggleOnlineVisibility={toggleOnlineVisibility}
         />
       )}
+
       <Header />
       <ButSec
         navigation={navigation}
@@ -39,6 +40,10 @@ const HomeScreen = ({navigation}) => {
         navigation={navigation}
         downloadDetailsList={downloadDetailsList}
         setDownloadDetailsList={setDownloadDetailsList}
+      />
+      <BannerAd
+        unitId={TestIds.BANNER}
+        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
       />
     </View>
   );
