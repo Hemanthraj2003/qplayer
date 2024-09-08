@@ -32,8 +32,19 @@ export const addDownloadDetails = async data => {
 };
 
 //save to dowloads
-export const saveToGallary = async (name, path) => {
-  const targetPath = `${RNFS.DownloadDirectoryPath}/${name}.mp4`;
+export const saveToGallery = async (name, path) => {
+  const directoryPath = `${RNFS.DownloadDirectoryPath}/qdisk`;
+  const targetPath = `${directoryPath}/${name}.mp4`;
+
+  // Check if the 'qdisk' directory exists
+  const directoryExists = await RNFS.exists(directoryPath);
+
+  // If the directory does not exist, create it
+  if (!directoryExists) {
+    await RNFS.mkdir(directoryPath);
+  }
+
+  // Move the file to the target path
   await RNFS.moveFile(path, targetPath);
   return targetPath;
 };
