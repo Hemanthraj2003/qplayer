@@ -139,18 +139,6 @@ const Local = ({navigation}) => {
           />
         )}
       </View>
-      <View style={styles.albumsContainer}>
-        <Text style={styles.albumsHeader}>ALBUMS</Text>
-        <FlatList
-          data={albums}
-          renderItem={({item}) => (
-            <TouchableOpacity style={styles.albumItem}>
-              <Text style={styles.albumTitle}>{item.title}</Text>
-            </TouchableOpacity>
-          )}
-          keyExtractor={item => item.id}
-        />
-      </View>
     </View>
   );
 };

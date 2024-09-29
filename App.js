@@ -23,53 +23,53 @@ const appOpenAd = AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
 const App = () => {
   const [loaded, setLoaded] = useState(false);
   const navigationRef = useNavigationContainerRef();
-
+  //code to show the ads when the app is opened
   useEffect(() => {
     if (loaded) {
       appOpenAd.show();
     }
   }, [loaded]);
+
   useEffect(() => {
+    //adding event listner for ads
     appOpenAd.addAdEventListener(AdEventType.LOADED, () => {
       setLoaded(true);
     });
-
     appOpenAd.load();
+
+    //creating ads to show
     mobileAds()
       .initialize()
       .then(adapterStatuses => {
         console.log('ads online', adapterStatuses);
       });
+
+    // code to handle permisiion requests
     const requestPermissions = async () => {
       const {status} = await MediaLibrary.requestPermissionsAsync();
       console.log('Permission status:', status);
     };
 
+    // handle incoming deeplinks (INITIAL URL)
     const handleInitialURL = async () => {
       const initialUrl = await Linking.getInitialURL();
       if (initialUrl) {
         console.log('Initial URL:', initialUrl);
-        const videoUrl = initialUrl.replace('qdisk://', ''); // Update based on your URL scheme
+        const videoUrl = initialUrl.replace('qdisk://', '');
         navigationRef.current?.navigate('VideoPlayer', {videoUrl});
       }
     };
 
+    //handling deeplink when the app is opened
     const handleUrl = event => {
       console.log('Received URL:', event.url);
-      const videoUrl = event.url.replace('qdisk://', ''); // Update based on your URL scheme
+      const videoUrl = event.url.replace('qdisk://', '');
       navigationRef.current?.navigate('VideoPlayer', {videoUrl});
     };
 
-    // Request permissions
     requestPermissions();
-
-    // Add event listener for incoming URLs
     Linking.addEventListener('url', handleUrl);
-
-    // Handle initial URL
     handleInitialURL();
-
-    // Clean up event listener on component unmount
     return () => {
       Linking.removeEventListener('url', handleUrl);
     };

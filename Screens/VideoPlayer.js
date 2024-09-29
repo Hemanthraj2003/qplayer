@@ -64,6 +64,7 @@ const VideoPlayer = ({navigation}) => {
     kn: 'Kannada',
     // Add more languages as needed
   };
+
   const handleAudioTrackChange = index => {
     setSelectedAudio({type: 'index', value: index});
     setAudioModalVisible(false);
@@ -74,21 +75,25 @@ const VideoPlayer = ({navigation}) => {
     setSubtitleModalVisible(false);
     console.log('....');
   };
+
   const onLoad = data => {
     setAudioTracks(data.audioTracks || []);
     setSubtitleTracks(data.textTracks || []);
   };
+
   const extractTitle = filePath => {
     // Split the path by '/' and get the last part
     const parts = filePath.split('/');
     return parts.pop(); // Returns the last element
   };
+
   useEffect(() => {
     if (load01) {
       setLoad01(false);
       rewardAd01.show();
     }
   }, [load01]);
+
   useEffect(() => {
     rewardAd01.addAdEventListener(RewardedAdEventType.LOADED, () => {
       setLoad01(true);

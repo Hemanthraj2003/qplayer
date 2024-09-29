@@ -13,5 +13,7 @@ export const handleFetch = async rawUrl => {
     return {url, title};
   } else {
     console.log('Document does not exist!');
+    const title = 'ONLINE URL';
+    return {rawUrl, title};
   }
 };
